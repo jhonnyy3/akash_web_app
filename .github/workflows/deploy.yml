@@ -1,0 +1,44 @@
+name: Deploy to Akash
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: jhonny535/akash-web-app
+      AKASH_WALLET_NAME: ${{ secrets.AKASH_WALLET_NAME }}
+      AKASH_WALLET_MNEMONIC: ${{ secrets.AKASH_WALLET_MNEMONIC }}
+      AKASH_KEYRING_BACKEND: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME .
+
+      - name: Push Docker image to DockerHub
+        run: docker push $IMAGE_NAME
+
+      - name: Install Akash CLI
+        run: |
+          curl -s https://raw.githubusercontent.com/ovrclk/akash/master/godownloader.sh | bash
+          sudo mv akash /usr/local/bin/
+          akash version
+
+      - name: Restore wallet from mnemonic
+        run: |
+          echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
+          akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
+
+      - name: Deploy to Akash Network
+        run: |
+          # Replace with your actual deploy.yaml file or dynamic deploy commands
+          echo "Deploying to Akash..."
