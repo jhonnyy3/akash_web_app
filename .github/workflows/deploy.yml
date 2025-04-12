@@ -29,8 +29,10 @@ jobs:
 
       - name: Install Akash CLI
         run: |
-          curl -s https://raw.githubusercontent.com/akash-network/akash/main/install.sh | bash
-          sudo mv bin/akash /usr/local/bin/
+          sudo apt update
+          sudo apt install -y golang
+          go install github.com/akash-network/node/cmd/akash@latest
+          sudo mv ~/go/bin/akash /usr/local/bin/
           akash version
 
       - name: Restore wallet from mnemonic
@@ -38,10 +40,23 @@ jobs:
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
+      - name: Validate deploy.yaml
+        run: |
+          akash tx deployment create deploy.yaml \
+            --from $AKASH_WALLET_NAME \
+            --keyring-backend $AKASH_KEYRING_BACKEND \
+            --chain-id akashnet-2 \
+            --node https://rpc.akash.forbole.com:443 \
+            --dry-run
+
       - name: Deploy to Akash Network
         run: |
-          echo "Deploying to Akash..."
-          # Replace this block with actual Akash deployment commands
-          # For example, you could generate a deployment:
-          # akash tx deployment create deploy.yaml --from $AKASH_WALLET_NAME --keyring-backend $AKASH_KEYRING_BACKEND --chain-id akashnet-2 --node https://rpc.akash.forbole.com:443 --gas-prices 0.025uakt --gas auto --gas-adjustment 1.5 -y
-
+          akash tx deployment create deploy.yaml \
+            --from $AKASH_WALLET_NAME \
+            --keyring-backend $AKASH_KEYRING_BACKEND \
+            --chain-id akashnet-2 \
+            --node https://rpc.akash.forbole.com:443 \
+            --gas-prices 0.025uakt \
+            --gas auto \
+            --gas-adjustment 1.5 \
+            -y
