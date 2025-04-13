@@ -30,8 +30,13 @@ jobs:
       - name: Install Akash CLI
         run: |
           sudo apt update
-          sudo apt install -y golang
-          go install github.com/akash-network/node/cmd/akash@latest
+          sudo apt install -y golang make git
+
+          git clone https://github.com/akash-network/node.git
+          cd node
+          git checkout v0.38.2
+          make install
+
           sudo mv ~/go/bin/akash /usr/local/bin/
           akash version
 
