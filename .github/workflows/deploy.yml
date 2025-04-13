@@ -26,11 +26,11 @@ jobs:
 
       - name: Push Docker image to DockerHub
         run: docker push $IMAGE_NAME
-
+        
       - name: Install Akash CLI (prebuilt binary)
         run: |
-          curl -L -o akash.tar.gz https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_x86_64.tar.gz
-          tar -xzf akash.tar.gz
+          curl -L -o akash.zip https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_x86_64.zip
+          unzip akash.zip
           sudo mv akash /usr/local/bin/
           akash version
 
