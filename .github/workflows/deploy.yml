@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-    deploy:
+  deploy:  # 🟢 This was incorrectly indented before
     runs-on: ubuntu-latest
 
     env:
@@ -27,8 +27,8 @@ jobs:
       - name: Push Docker image to DockerHub
         run: docker push $IMAGE_NAME
 
-     - name: Install Akash CLI (prebuilt binary)
-       run: |
+      - name: Install Akash CLI (prebuilt binary)
+        run: |
           curl -L -o akash.tar.gz https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_x86_64.tar.gz
           tar -xzf akash.tar.gz
           sudo mv akash /usr/local/bin/
