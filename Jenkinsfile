@@ -39,7 +39,7 @@ pipeline {
             steps {
                 bat '''
                 curl --ssl-no-revoke -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Windows_x86_64.zip
-                tar -xf akash_0.38.2_Windows_x86_64.zip
+                powershell -Command "Expand-Archive -Path 'akash_0.38.2_Windows_x86_64.zip' -DestinationPath ."
                 move akash.exe C:\\Windows\\System32\\
                 akash.exe version
                 '''
