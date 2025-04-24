@@ -38,7 +38,7 @@ pipeline {
         stage('Install Akash CLI') {
             steps {
                 bat '''
-                curl -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Windows_x86_64.zip
+                curl --ssl-no-revoke -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Windows_x86_64.zip
                 tar -xf akash_0.38.2_Windows_x86_64.zip
                 move akash.exe C:\\Windows\\System32\\
                 akash.exe version
