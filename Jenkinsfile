@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'ubuntu:22.04'   // Uses Ubuntu as build environment
+            args '-u root:root'    // Runs as root to install packages and use Docker
+        }
+    }
 
     environment {
         IMAGE_NAME = "jhonny535/akash-web-app"
@@ -9,6 +14,15 @@ pipeline {
     }
 
     stages {
+        stage('Setup Tools') {
+            steps {
+                sh '''
+                    apt-get update
+                    apt-get install -y curl tar docker.io
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git 'https://github.com/jhonnyy3/akash-cicd-demo'
@@ -40,7 +54,7 @@ pipeline {
                 sh '''
                     curl -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_x86_64.tar.gz
                     tar -xzf akash_0.38.2_Linux_x86_64.tar.gz
-                    sudo mv akash /usr/local/bin/
+                    mv akash /usr/local/bin/
                     akash version
                 '''
             }
@@ -85,3 +99,4 @@ pipeline {
         }
     }
 }
+
