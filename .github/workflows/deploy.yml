@@ -35,7 +35,7 @@ jobs:
           
       - name: Restore wallet from mnemonic
         run: |
-          echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
+          echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND -y"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
       - name: Validate deploy.yaml
