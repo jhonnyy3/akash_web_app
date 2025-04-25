@@ -33,12 +33,12 @@ jobs:
           sudo dpkg -i akash_0.38.2_Linux_amd64.deb
           akash version
 
-     - name: Install provider-services CLI
-       run: |
-        curl -s https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        export PATH="$HOME/.local/bin:$PATH"
-        provider-services version
+      - name: Install provider-services CLI
+        run: |
+          curl -s https://raw.githubusercontent.com/akash-network/provider/main/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          provider-services version
 
 
       - name: Restore wallet from mnemonic
