@@ -45,7 +45,7 @@ jobs:
 
       - name: Validate deploy.yaml (Dry-run)
         run: |
-          akash provider-services deployment create deploy.yaml \
+          provider-services deployment create deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
             --chain-id akashnet-1 \
@@ -54,7 +54,7 @@ jobs:
 
       - name: Deploy to Akash Network using provider-services
         run: |
-          akash provider-services deployment create deploy.yaml \
+          provider-services deployment create deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
             --chain-id akashnet-1 \
