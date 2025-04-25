@@ -50,7 +50,6 @@ jobs:
           provider-services send-manifest deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
-            --chain-id akashnet-1 \
             --node https://rpc.akashnet.net:443 \
             --dry-run
 
@@ -59,7 +58,6 @@ jobs:
           provider-services send-manifest deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
-            --chain-id akashnet-1 \
             --node https://rpc.akashnet.net:443 \
             --gas-prices 0.025uakt \
             --gas auto \
