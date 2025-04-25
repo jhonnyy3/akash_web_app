@@ -37,28 +37,28 @@ jobs:
         run: |
           echo "AKASH_WALLET_NAME: $AKASH_WALLET_NAME"
           echo "AKASH_KEYRING_BACKEND: $AKASH_KEYRING_BACKEND"
-    
+
       - name: Restore wallet from mnemonic
         run: |
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Validate deploy.yaml
+      - name: Validate deploy.yaml (Dry-run)
         run: |
-          akash tx deployment create deploy.yaml \
-            --from testwallet \
-            --keyring-backend test \
+          akash provider-services deployment create deploy.yaml \
+            --from $AKASH_WALLET_NAME \
+            --keyring-backend $AKASH_KEYRING_BACKEND \
             --chain-id akashnet-1 \
             --node https://rpc.akashnet.net:443 \
             --dry-run
 
-      - name: Deploy to Akash Network
+      - name: Deploy to Akash Network using provider-services
         run: |
-          akash tx deployment create deploy.yaml \
+          akash provider-services deployment create deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
-            --chain-id akashnet-2 \
-            --node https://rpc.akash.forbole.com:443 \
+            --chain-id akashnet-1 \
+            --node https://rpc.akashnet.net:443 \
             --gas-prices 0.025uakt \
             --gas auto \
             --gas-adjustment 1.5 \
