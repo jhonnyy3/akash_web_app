@@ -45,14 +45,6 @@ jobs:
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Validate deploy.yaml (Dry-run)
-        run: |
-          provider-services send-manifest deploy.yaml \
-            --from $AKASH_WALLET_NAME \
-            --keyring-backend $AKASH_KEYRING_BACKEND \
-            --node https://rpc.akashnet.net:443 \
-            --dry-run
-
       - name: Deploy to Akash Network
         run: |
           provider-services send-manifest deploy.yaml \
