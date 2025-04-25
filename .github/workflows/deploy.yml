@@ -32,7 +32,12 @@ jobs:
           curl -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_amd64.deb
           sudo dpkg -i akash_0.38.2_Linux_amd64.deb
           akash version
-          
+
+      - name: Debug environment variables
+        run: |
+          echo "AKASH_WALLET_NAME: $AKASH_WALLET_NAME"
+          echo "AKASH_KEYRING_BACKEND: $AKASH_KEYRING_BACKEND"
+    
       - name: Restore wallet from mnemonic
         run: |
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
