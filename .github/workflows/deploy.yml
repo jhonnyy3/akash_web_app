@@ -50,7 +50,7 @@ jobs:
             --keyring-backend test \
             --chain-id akashnet-1 \
             --node https://rpc.akashnet.net:443 \
-            --dry-run --debug
+            --dry-run
 
       - name: Deploy to Akash Network
         run: |
