@@ -29,8 +29,8 @@ jobs:
 
       - name: Install Akash CLI
         run: |
-          curl -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_x86_64.tar.gz
-          tar -xzf akash_0.38.2_Linux_x86_64.tar.gz
+          curl -LO https://github.com/akash-network/node/releases/download/v0.38.2/akash_0.38.2_Linux_amd64.tar.gz
+          tar -xzf akash_0.38.2_Linux_amd64.tar.gz
           sudo mv akash /usr/local/bin/
           akash version
 
