@@ -67,7 +67,7 @@ jobs:
 
       - name: Create Akash Deployment
         run: |
-          akash tx deployment create deploy.yaml \
+          akash tx deployment create deploy.yaml --from $AKASH_KEY_NAME \
             --from "$AKASH_WALLET_NAME" \
             --keyring-backend "$AKASH_KEYRING_BACKEND" \
             --chain-id "$AKASH_CHAIN_ID" \
