@@ -52,6 +52,11 @@ jobs:
       - name: Generate Akash Certificate
         run: |
           akash tx cert generate
+          
+      - name: Move Akash Certificate to ~/.akash
+        run: |
+          mkdir -p ~/.akash
+          cp *.pem ~/.akash/
 
       - name: Publish Akash Certificate
         run: |
