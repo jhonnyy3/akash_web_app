@@ -13,6 +13,8 @@ jobs:
       AKASH_WALLET_NAME: testwallet
       AKASH_WALLET_MNEMONIC: ${{ secrets.AKASH_WALLET_MNEMONIC }}
       AKASH_KEYRING_BACKEND: test
+      AKASH_CHAIN_ID: akashnet-1
+      AKASH_NODE: https://rpc.akashnet.net:443
 
     steps:
       - name: Checkout code
@@ -21,11 +23,10 @@ jobs:
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME .
-
-      - name: Push Docker image to DockerHub
-        run: docker push $IMAGE_NAME
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
 
       - name: Install Akash CLI
         run: |
@@ -43,18 +44,34 @@ jobs:
       - name: Install jq (JSON parser)
         run: sudo apt-get install -y jq
 
-      - name: Restore wallet from mnemonic
+      - name: Restore Wallet from Mnemonic
         run: |
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
+      - name: Generate Akash Certificate
+        run: |
+          akash cert generate --from "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND"
+
+      - name: Create Certificate on Blockchain
+        run: |
+          akash tx cert create \
+            --from "$AKASH_WALLET_NAME" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --node "$AKASH_NODE" \
+            --gas-prices 0.025uakt \
+            --gas auto \
+            --gas-adjustment 1.5 \
+            -y
+
       - name: Create Akash Deployment
         run: |
           akash tx deployment create deploy.yaml \
-            --from $AKASH_WALLET_NAME \
-            --keyring-backend $AKASH_KEYRING_BACKEND \
-            --chain-id akashnet-1 \
-            --node https://rpc.akashnet.net:443 \
+            --from "$AKASH_WALLET_NAME" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --node "$AKASH_NODE" \
             --gas-prices 0.025uakt \
             --gas auto \
             --gas-adjustment 1.5 \
@@ -64,15 +81,15 @@ jobs:
         id: get-dseq
         run: |
           DSEQ=$(akash query deployment list \
-            --owner $(akash keys show $AKASH_WALLET_NAME -a) \
-            --node https://rpc.akashnet.net:443 \
+            --owner $(akash keys show "$AKASH_WALLET_NAME" -a) \
+            --node "$AKASH_NODE" \
             --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
           echo "DSEQ=$DSEQ" >> $GITHUB_ENV
 
       - name: Send Manifest to Provider
         run: |
           provider-services send-manifest deploy.yaml \
-            --from $AKASH_WALLET_NAME \
-            --keyring-backend $AKASH_KEYRING_BACKEND \
-            --node https://rpc.akashnet.net:443 \
-            --dseq $DSEQ
+            --from "$AKASH_WALLET_NAME" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --node "$AKASH_NODE" \
+            --dseq "$DSEQ"
