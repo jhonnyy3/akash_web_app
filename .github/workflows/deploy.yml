@@ -15,6 +15,7 @@ jobs:
       AKASH_KEYRING_BACKEND: test
       AKASH_CHAIN_ID: akashnet-1
       AKASH_NODE: https://rpc.akashnet.net:443
+      AKASH_HOME: /home/runner/.akash
 
     steps:
       - name: Checkout code
@@ -49,26 +50,25 @@ jobs:
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Generate Akash Certificate
-        run: |
-          akash tx cert generate
-          # List the files in the current directory to ensure the .pem files are generated
-          ls -alh *.pem || echo "No PEM files found"
-          
-      - name: Move generated certificates to .akash
+      - name: Generate Akash Certificates
         run: |
           mkdir -p ~/.akash
-          # Check if *.pem files exist before attempting to copy
-          if ls *.pem 1> /dev/null 2>&1; then
-            cp *.pem ~/.akash/
-          else
-            echo "No PEM files to copy, exiting."
-            exit 1
-          fi
+          akash tx cert generate client --from "$AKASH_WALLET_NAME" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --home ~/.akash \
+            --node "$AKASH_NODE" \
+            -y
+          ls -alh ~/.akash/*.pem || { echo "No PEM files found"; exit 1; }
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish
+          akash tx cert publish \
+            --from "$AKASH_WALLET_NAME" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --node "$AKASH_NODE" \
+            -y
 
       - name: Create Akash Deployment
         run: |
