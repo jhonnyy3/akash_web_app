@@ -63,7 +63,7 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish -y
+          akash tx cert publish
 
       - name: Create Akash Deployment
         run: |
