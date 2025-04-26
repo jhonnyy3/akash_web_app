@@ -64,7 +64,6 @@ jobs:
       - name: Publish Akash Certificate
         run: |
           akash tx cert publish \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
             --chain-id "$AKASH_CHAIN_ID" \
             --node "$AKASH_NODE" \
             -y
