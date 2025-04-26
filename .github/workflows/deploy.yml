@@ -40,14 +40,39 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/bin:$PATH"
           provider-services version
 
+      - name: Install jq (JSON parser)
+        run: sudo apt-get install -y jq
+
       - name: Restore wallet from mnemonic
         run: |
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Deploy to Akash Network
+      - name: Create Akash Deployment
+        run: |
+          akash tx deployment create deploy.yaml \
+            --from $AKASH_WALLET_NAME \
+            --keyring-backend $AKASH_KEYRING_BACKEND \
+            --chain-id akashnet-1 \
+            --node https://rpc.akashnet.net:443 \
+            --gas-prices 0.025uakt \
+            --gas auto \
+            --gas-adjustment 1.5 \
+            -y
+
+      - name: Extract DSEQ from Deployment
+        id: get-dseq
+        run: |
+          DSEQ=$(akash query deployment list \
+            --owner $(akash keys show $AKASH_WALLET_NAME -a) \
+            --node https://rpc.akashnet.net:443 \
+            --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
+          echo "DSEQ=$DSEQ" >> $GITHUB_ENV
+
+      - name: Send Manifest to Provider
         run: |
           provider-services send-manifest deploy.yaml \
             --from $AKASH_WALLET_NAME \
             --keyring-backend $AKASH_KEYRING_BACKEND \
             --node https://rpc.akashnet.net:443 \
+            --dseq $DSEQ
