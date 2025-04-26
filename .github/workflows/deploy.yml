@@ -51,7 +51,9 @@ jobs:
 
       - name: Generate Akash Certificate
         run: |
-          akash tx cert generate
+           akash tx cert generate \
+           --from "$AKASH_WALLET_NAME" \
+           --keyring-backend "$AKASH_KEYRING_BACKEND"
           
       - name: Move Akash Certificate to ~/.akash
         run: |
