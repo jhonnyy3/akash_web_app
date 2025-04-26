@@ -55,15 +55,15 @@ jobs:
 
       - name: Create Certificate on Blockchain
         run: |
-          akash tx cert create \
-            --from "$AKASH_WALLET_NAME" \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --node "$AKASH_NODE" \
-            --gas-prices 0.025uakt \
-            --gas auto \
-            --gas-adjustment 1.5 \
-            -y
+          akash tx cert create-client \
+          --from "$AKASH_WALLET_NAME" \
+          --keyring-backend "$AKASH_KEYRING_BACKEND" \
+          --chain-id "$AKASH_CHAIN_ID" \
+          --node "$AKASH_NODE" \
+          --gas-prices 0.025uakt \
+          --gas auto \
+          --gas-adjustment 1.5 \
+          -y
 
       - name: Create Akash Deployment
         run: |
