@@ -55,15 +55,7 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish \
-            --from "$AKASH_WALLET_NAME" \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --node "$AKASH_NODE" \
-            --gas-prices 0.025uakt \
-            --gas auto \
-            --gas-adjustment 1.5 \
-            -y
+          akash tx cert publish
 
       - name: Create Akash Deployment
         run: |
