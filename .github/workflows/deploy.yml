@@ -63,10 +63,7 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --node "$AKASH_NODE" \
-            -y
+          akash tx cert publish -y
 
       - name: Create Akash Deployment
         run: |
