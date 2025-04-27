@@ -71,12 +71,7 @@ jobs:
 
           if echo "$CERT_EXIST" | grep -q null; then
             echo "No cert found. Publishing..."
-            akash tx cert publish \
-              --from "$AKASH_WALLET_NAME" \
-              --chain-id "$AKASH_CHAIN_ID" \
-              --keyring-backend "$AKASH_KEYRING_BACKEND" \
-              --node "$AKASH_NODE" \
-              -y
+            akash tx cert publish 
           else
             echo "Certificate already exists. Skipping publish."
           fi
