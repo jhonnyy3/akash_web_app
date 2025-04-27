@@ -45,30 +45,37 @@ jobs:
       - name: Install jq (JSON parser)
         run: sudo apt-get install -y jq
 
-      - name: Restore Wallet from Mnemonic
+      - name: Restore Wallet (Only if Missing)
         run: |
-          echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
-          akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
+          if ! akash keys show "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" > /dev/null 2>&1; then
+            echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
+          else
+            echo "Wallet already exists. Skipping recovery."
+          fi
 
-      - name: Generate Akash Certificates
+      - name: Generate and Publish Certificate (Only if Missing)
         run: |
-          mkdir -p ~/.akash
-          akash tx cert generate client --from "$AKASH_WALLET_NAME" \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
-            --home ~/.akash \
-            --node "$AKASH_NODE" \
-            -y
-          ls -alh ~/.akash/*.pem || { echo "No PEM files found"; exit 1; }
+          CERT_COUNT=$(akash query cert list "$AKASH_WALLET_NAME" --node "$AKASH_NODE" --output json | jq '.certificates | length')
 
-      - name: Publish Akash Certificate
-        run: |
-          akash tx cert publish
+          if [ "$CERT_COUNT" -eq 0 ]; then
+            echo "No certificate found. Generating and publishing..."
+            akash cert generate --keyring-backend "$AKASH_KEYRING_BACKEND"
+            akash tx cert create \
+              --from "$AKASH_WALLET_NAME" \
+              --keyring-backend "$AKASH_KEYRING_BACKEND" \
+              --chain-id "$AKASH_CHAIN_ID" \
+              --node "$AKASH_NODE" \
+              --gas-prices 0.025uakt \
+              --gas auto \
+              --gas-adjustment 1.5 \
+              -y
+          else
+            echo "Certificate already exists. Skipping generation."
+          fi
 
       - name: Create Akash Deployment
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          
           akash tx deployment create deploy.yaml \
             --from "$AKASH_WALLET_NAME" \
             --owner "$OWNER_ADDRESS" \
@@ -84,24 +91,20 @@ jobs:
         id: get-dseq
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          
-          DSEQ=$(akash query deployment list \
-            --owner "$OWNER_ADDRESS" \
-            --node "$AKASH_NODE" \
-            --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
-          
+          DSEQ=$(akash query deployment list --owner "$OWNER_ADDRESS" --node "$AKASH_NODE" --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
           echo "DSEQ=$DSEQ" >> $GITHUB_ENV
+          echo "Deployment sequence: $DSEQ"
 
       - name: Find a Provider Matching SDL
         id: find-provider
         run: |
           PROVIDER=$(akash query market provider list --node "$AKASH_NODE" --output json | jq -r '.providers[0].owner')
-          
+
           if [ -z "$PROVIDER" ]; then
             echo "No provider found!"
             exit 1
           fi
-          
+
           echo "Found provider: $PROVIDER"
           echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
 
@@ -113,3 +116,19 @@ jobs:
             --keyring-backend "$AKASH_KEYRING_BACKEND" \
             --node "$AKASH_NODE" \
             --dseq "$DSEQ"
+
+      - name: Create Lease
+        run: |
+          akash tx market lease create \
+            --from "$AKASH_WALLET_NAME" \
+            --dseq "$DSEQ" \
+            --gseq 1 \
+            --oseq 1 \
+            --provider "$PROVIDER" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --node "$AKASH_NODE" \
+            --gas-prices 0.025uakt \
+            --gas auto \
+            --gas-adjustment 1.5 \
+            -y
