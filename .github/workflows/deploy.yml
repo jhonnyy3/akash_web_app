@@ -50,56 +50,58 @@ jobs:
           echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
           akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Generate Akash Client Certificate
+      - name: Generate Akash Certificates
         run: |
           mkdir -p ~/.akash
-          akash tx cert generate client \
-            --from "$AKASH_WALLET_NAME" \
+          akash tx cert generate client --from "$AKASH_WALLET_NAME" \
             --chain-id "$AKASH_CHAIN_ID" \
             --keyring-backend "$AKASH_KEYRING_BACKEND" \
             --home ~/.akash \
             --node "$AKASH_NODE" \
             -y
-          ls -alh ~/.akash/*.pem
+          ls -alh ~/.akash/*.pem || { echo "No PEM files found"; exit 1; }
 
-      - name: Publish Akash Certificate (only if needed)
+      - name: Publish Akash Certificate
         run: |
-          set +e
-          OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          CERT_EXIST=$(akash query cert list --owner "$OWNER_ADDRESS" --node "$AKASH_NODE" --output json | jq '.certificates[0]')
-          set -e
-
-          if echo "$CERT_EXIST" | grep -q null; then
-            echo "No cert found. Publishing..."
-            akash tx cert publish 
-          else
-            echo "Certificate already exists. Skipping publish."
-          fi
+          akash tx cert publish
 
       - name: Create Akash Deployment
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
           
-          akash tx deployment create deploy.yaml
+          akash tx deployment create deploy.yaml \
+            --from "$AKASH_WALLET_NAME" \
+            --owner "$OWNER_ADDRESS" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --node "$AKASH_NODE" \
+            --gas-prices 0.025uakt \
+            --gas auto \
+            --gas-adjustment 1.5 \
+            -y
 
       - name: Extract DSEQ from Deployment
         id: get-dseq
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
+          
           DSEQ=$(akash query deployment list \
             --owner "$OWNER_ADDRESS" \
             --node "$AKASH_NODE" \
             --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
+          
           echo "DSEQ=$DSEQ" >> $GITHUB_ENV
 
       - name: Find a Provider Matching SDL
         id: find-provider
         run: |
           PROVIDER=$(akash query market provider list --node "$AKASH_NODE" --output json | jq -r '.providers[0].owner')
+          
           if [ -z "$PROVIDER" ]; then
             echo "No provider found!"
             exit 1
           fi
+          
           echo "Found provider: $PROVIDER"
           echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
 
