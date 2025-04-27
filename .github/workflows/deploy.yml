@@ -80,16 +80,7 @@ jobs:
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
           
-          akash tx deployment create deploy.yaml \
-            --from "$AKASH_WALLET_NAME" \
-            --owner "$OWNER_ADDRESS" \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --node "$AKASH_NODE" \
-            --gas-prices 0.025uakt \
-            --gas auto \
-            --gas-adjustment 1.5 \
-            -y
+          akash tx deployment create deploy.yaml
 
       - name: Extract DSEQ from Deployment
         id: get-dseq
