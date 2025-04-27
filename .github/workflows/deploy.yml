@@ -53,10 +53,16 @@ jobs:
       - name: Generate Akash Client Certificate
         run: |
           mkdir -p ~/.akash
-          provider-services cert generate --keyring-backend "$AKASH_KEYRING_BACKEND"
+          akash tx cert generate client \
+            --from "$AKASH_WALLET_NAME" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --home ~/.akash \
+            --node "$AKASH_NODE" \
+            -y
           ls -alh ~/.akash/*.pem
 
-      - name: Publish Akash Certificate (only if not already)
+      - name: Publish Akash Certificate (only if needed)
         run: |
           set +e
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
@@ -65,14 +71,20 @@ jobs:
 
           if echo "$CERT_EXIST" | grep -q null; then
             echo "No cert found. Publishing..."
-            akash tx cert publish --from "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" -y
+            akash tx cert publish \
+              --from "$AKASH_WALLET_NAME" \
+              --chain-id "$AKASH_CHAIN_ID" \
+              --keyring-backend "$AKASH_KEYRING_BACKEND" \
+              --node "$AKASH_NODE" \
+              -y
           else
-            echo "Cert already exists. Skipping publish."
+            echo "Certificate already exists. Skipping publish."
           fi
 
       - name: Create Akash Deployment
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
+          
           akash tx deployment create deploy.yaml \
             --from "$AKASH_WALLET_NAME" \
             --owner "$OWNER_ADDRESS" \
