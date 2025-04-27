@@ -47,24 +47,28 @@ jobs:
 
       - name: Restore Wallet from Mnemonic
         run: |
-         echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
+          echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
+          akash keys list --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Generate Akash Client Certificates
+      - name: Generate Akash Client Certificate
         run: |
-         mkdir -p ~/.akash
-         akash cert generate --keyring-backend "$AKASH_KEYRING_BACKEND" --home ~/.akash
-         ls -alh ~/.akash/*.pem
+          mkdir -p ~/.akash
+          provider-services cert generate --keyring-backend "$AKASH_KEYRING_BACKEND"
+          ls -alh ~/.akash/*.pem
 
-      - name: Publish Akash Certificate (Safe)
+      - name: Publish Akash Certificate (only if not already)
         run: |
-         set +e
-         akash query cert list --owner $(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND") --node "$AKASH_NODE" --output json | jq '.certificates[0]' > cert.json
-         set -e
-         if grep -q null cert.json; then
-         akash tx cert publish --from "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" -y
-         else
-         echo "Cert already exists, skip publish"
-         fi
+          set +e
+          OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
+          CERT_EXIST=$(akash query cert list --owner "$OWNER_ADDRESS" --node "$AKASH_NODE" --output json | jq '.certificates[0]')
+          set -e
+
+          if echo "$CERT_EXIST" | grep -q null; then
+            echo "No cert found. Publishing..."
+            akash tx cert publish --from "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" -y
+          else
+            echo "Cert already exists. Skipping publish."
+          fi
 
       - name: Create Akash Deployment
         run: |
@@ -84,20 +88,20 @@ jobs:
         id: get-dseq
         run: |
           OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          DSEQ=$(akash query deployment list --owner "$OWNER_ADDRESS" --node "$AKASH_NODE" --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
+          DSEQ=$(akash query deployment list \
+            --owner "$OWNER_ADDRESS" \
+            --node "$AKASH_NODE" \
+            --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
           echo "DSEQ=$DSEQ" >> $GITHUB_ENV
-          echo "Deployment sequence: $DSEQ"
 
       - name: Find a Provider Matching SDL
         id: find-provider
         run: |
           PROVIDER=$(akash query market provider list --node "$AKASH_NODE" --output json | jq -r '.providers[0].owner')
-
           if [ -z "$PROVIDER" ]; then
             echo "No provider found!"
             exit 1
           fi
-
           echo "Found provider: $PROVIDER"
           echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
 
@@ -109,19 +113,3 @@ jobs:
             --keyring-backend "$AKASH_KEYRING_BACKEND" \
             --node "$AKASH_NODE" \
             --dseq "$DSEQ"
-
-      - name: Create Lease
-        run: |
-          akash tx market lease create \
-            --from "$AKASH_WALLET_NAME" \
-            --dseq "$DSEQ" \
-            --gseq 1 \
-            --oseq 1 \
-            --provider "$PROVIDER" \
-            --keyring-backend "$AKASH_KEYRING_BACKEND" \
-            --chain-id "$AKASH_CHAIN_ID" \
-            --node "$AKASH_NODE" \
-            --gas-prices 0.025uakt \
-            --gas auto \
-            --gas-adjustment 1.5 \
-            -y
