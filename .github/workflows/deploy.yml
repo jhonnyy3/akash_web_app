@@ -45,33 +45,26 @@ jobs:
       - name: Install jq (JSON parser)
         run: sudo apt-get install -y jq
 
-      - name: Restore Wallet (Only if Missing)
+      - name: Restore Wallet from Mnemonic
         run: |
-          if ! akash keys show "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" > /dev/null 2>&1; then
-            echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
-          else
-            echo "Wallet already exists. Skipping recovery."
-          fi
+         echo "$AKASH_WALLET_MNEMONIC" | akash keys add "$AKASH_WALLET_NAME" --recover --keyring-backend "$AKASH_KEYRING_BACKEND"
 
-      - name: Generate and Publish Certificate (Only if Missing)
+      - name: Generate Akash Client Certificates
         run: |
-          CERT_COUNT=$(akash query cert list "$AKASH_WALLET_NAME" --node "$AKASH_NODE" --output json | jq '.certificates | length')
+         mkdir -p ~/.akash
+         akash cert generate --keyring-backend "$AKASH_KEYRING_BACKEND" --home ~/.akash
+         ls -alh ~/.akash/*.pem
 
-          if [ "$CERT_COUNT" -eq 0 ]; then
-            echo "No certificate found. Generating and publishing..."
-            akash cert generate --keyring-backend "$AKASH_KEYRING_BACKEND"
-            akash tx cert create \
-              --from "$AKASH_WALLET_NAME" \
-              --keyring-backend "$AKASH_KEYRING_BACKEND" \
-              --chain-id "$AKASH_CHAIN_ID" \
-              --node "$AKASH_NODE" \
-              --gas-prices 0.025uakt \
-              --gas auto \
-              --gas-adjustment 1.5 \
-              -y
-          else
-            echo "Certificate already exists. Skipping generation."
-          fi
+      - name: Publish Akash Certificate (Safe)
+        run: |
+         set +e
+         akash query cert list --owner $(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND") --node "$AKASH_NODE" --output json | jq '.certificates[0]' > cert.json
+         set -e
+         if grep -q null cert.json; then
+         akash tx cert publish --from "$AKASH_WALLET_NAME" --keyring-backend "$AKASH_KEYRING_BACKEND" --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" -y
+         else
+         echo "Cert already exists, skip publish"
+         fi
 
       - name: Create Akash Deployment
         run: |
