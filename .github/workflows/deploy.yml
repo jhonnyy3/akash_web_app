@@ -65,8 +65,10 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish
-
+          mkdir -p ~/.akash
+          akash key cert generate
+          akash tx cert publish ~/.akash/client.pem
+          
       - name: Create Akash Deployment
         run: |
           akash tx deployment create deploy.yaml \
