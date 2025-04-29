@@ -16,6 +16,8 @@ jobs:
       AKASH_CHAIN_ID: akashnet-1
       AKASH_NODE: https://rpc.akashnet.net:443
       AKASH_HOME: /home/runner/.akash
+      OWNER_ADDRESS: akash1c5nhz99f7dfn2a4vjqtg4ldttsens524yeqtp9
+      PROVIDER: akash1u5cdg7k3gl43mukca4aeultuz8x2j68mgwn28e
 
     steps:
       - name: Checkout code
@@ -63,12 +65,15 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          akash tx cert publish
+          akash tx cert publish \
+            --from "$AKASH_WALLET_NAME" \
+            --chain-id "$AKASH_CHAIN_ID" \
+            --keyring-backend "$AKASH_KEYRING_BACKEND" \
+            --node "$AKASH_NODE" \
+            -y
 
       - name: Create Akash Deployment
         run: |
-          OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          
           akash tx deployment create deploy.yaml \
             --from "$AKASH_WALLET_NAME" \
             --owner "$OWNER_ADDRESS" \
@@ -83,27 +88,12 @@ jobs:
       - name: Extract DSEQ from Deployment
         id: get-dseq
         run: |
-          OWNER_ADDRESS=$(akash keys show "$AKASH_WALLET_NAME" -a --keyring-backend "$AKASH_KEYRING_BACKEND")
-          
           DSEQ=$(akash query deployment list \
             --owner "$OWNER_ADDRESS" \
             --node "$AKASH_NODE" \
             --output json | jq -r '.deployments[-1].deployment.deployment_id.dseq')
-          
-          echo "DSEQ=$DSEQ" >> $GITHUB_ENV
 
-      - name: Find a Provider Matching SDL
-        id: find-provider
-        run: |
-          PROVIDER=$(akash query market provider list --node "$AKASH_NODE" --output json | jq -r '.providers[0].owner')
-          
-          if [ -z "$PROVIDER" ]; then
-            echo "No provider found!"
-            exit 1
-          fi
-          
-          echo "Found provider: $PROVIDER"
-          echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
+          echo "DSEQ=$DSEQ" >> $GITHUB_ENV
 
       - name: Send Manifest to Provider
         run: |
