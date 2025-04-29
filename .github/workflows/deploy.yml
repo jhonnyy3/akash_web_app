@@ -65,10 +65,13 @@ jobs:
 
       - name: Publish Akash Certificate
         run: |
-          mkdir -p ~/.akash
-          akash key cert generate
-          akash tx cert publish ~/.akash/client.pem
-          
+           akash tx cert publish client \
+           --chain-id "$AKASH_CHAIN_ID" \
+           --node "$AKASH_NODE" \
+           --home ~/.akash \
+           --from "$AKASH_WALLET_NAME" \
+           --keyring-backend "$AKASH_KEYRING_BACKEND"
+           
       - name: Create Akash Deployment
         run: |
           akash tx deployment create deploy.yaml \
